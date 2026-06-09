@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM 2026 – Tippekonkurranse</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #111; }
+.container { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.sub { font-size: 14px; color: #777; margin-bottom: 1.5rem; }
+
+/* Name */
+.name-section { margin-bottom: 1.5rem; }
+.name-section label { font-size: 13px; color: #666; display: block; margin-bottom: 5px; }
+.name-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.name-row input { padding: 0 12px; height: 38px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; width: 220px; }
+.name-row input:focus { outline: none; border-color: #555; }
+.name-row button { padding: 0 16px; height: 38px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; cursor: pointer; background: #fff; }
+.name-row button:hover { background: #f0f0f0; }
+.hint { font-size: 12px; color: #aaa; margin-top: 5px; }
+.hint.ok { color: #1a9e6a; }
+
+/* Tabs */
+.tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 1.2rem; }
+.tab { padding: 9px 18px; font-size: 14px; cursor: pointer; border: none; background: none; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px; font-weight: 500; }
+.tab.active { color: #111; border-bottom-color: #111; }
+.tab:hover:not(.active) { color: #444; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* Info note */
+.info-note { font-size: 12px; background: #e8f0fe; color: #1a56db; padding: 5px 12px; border-radius: 6px; display: inline-block; margin-bottom: 14px; }
+
+/* Groups grid */
+.groups-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+.gcard { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 12px; }
+.gtitle { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.trow { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f2f2f2; }
+.trow:last-child { border-bottom: none; }
+.tname { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.fl { width: 22px; height: 15px; object-fit: cover; border-radius: 2px; border: 1px solid #eee; }
+.btngrp { display: flex; gap: 4px; }
+.abtn {
+  padding: 4px 9px; font-size: 11px; font-weight: 600;
+  border: 1px solid #ccc; border-radius: 5px;
+  cursor: pointer; background: #f8f8f8; color: #aaa;
+  transition: all 0.1s;
+}
+.abtn:hover { background: #eee; color: #555; }
+.abtn.s1 { background: #111; border-color: #111; color: #fff; }
+.abtn.s2 { background: #555; border-color: #555; color: #fff; }
+.abtn.s3 { background: #999; border-color: #999; color: #fff; }
+.abtn.s4 { background: #ccc; border-color: #ccc; color: #fff; }
+
+/* Third ranking */
+.third-wrap { margin-top: 1.8rem; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; }
+.third-wrap h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.third-desc { font-size: 13px; color: #777; margin-bottom: 12px; }
+.missing-note { font-size: 13px; color: #777; background: #f5f5f5; padding: 8px 12px; border-radius: 7px; margin-bottom: 10px; }
+.missing-note b { color: #333; }
+.rlist { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.ritem {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; background: #fafafa;
+  border: 1px solid #e8e8e8; border-radius: 8px;
+  cursor: grab; user-select: none;
+}
+.ritem:hover { border-color: #bbb; }
+.ritem.through { background: #fff; }
+.rnum { font-size: 12px; font-weight: 700; min-width: 18px; color: #ccc; }
+.ritem.through .rnum { color: #111; }
+.rteam { font-size: 13px; flex: 1; display: flex; align-items: center; gap: 6px; }
+.rgrp { font-size: 11px; color: #ccc; margin-left: 2px; }
+.rbadge { font-size: 11px; padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+.rbadge.t { background: #111; color: #fff; }
+.rbadge.o { background: #f0f0f0; color: #aaa; }
+.rarr { display: flex; flex-direction: column; gap: 1px; }
+.arrbtn { background: #f0f0f0; border: none; cursor: pointer; font-size: 10px; padding: 2px 6px; color: #666; border-radius: 3px; line-height: 1.4; }
+.arrbtn:hover { background: #ddd; }
+.arrbtn:disabled { opacity: 0.2; cursor: default; }
+.divline { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.divline hr { flex: 1; border: none; border-top: 2px dashed #888; }
+.divline span { font-size: 11px; color: #555; font-weight: 600; white-space: nowrap; }
+
+/* Knockout */
+.round-lbl { font-size: 11px; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; margin: 1.5rem 0 8px; }
+.pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 6px; margin-bottom: 4px; }
+.pbtn {
+  padding: 7px 10px; font-size: 13px;
+  border: 1px solid #ddd; border-radius: 8px;
+  cursor: pointer; background: #fff;
+  text-align: left; display: flex; align-items: center; gap: 7px;
+  color: #111; transition: all 0.1s;
+}
+.pbtn:hover { background: #f5f5f5; border-color: #bbb; }
+.pbtn.sel { background: #111; border-color: #111; color: #fff; font-weight: 500; }
+.pbtn.gold { background: #7a5800; border-color: #7a5800; color: #fff; font-weight: 500; }
+
+/* Save bar */
+.savebar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1px solid #e0e0e0;
+  padding: 10px 1rem; display: flex; gap: 12px; align-items: center;
+  max-width: 720px; margin: 0 auto;
+}
+.savebtn {
+  padding: 0 20px; height: 38px; border: 1px solid #ccc;
+  border-radius: 8px; font-size: 14px; font-weight: 500;
+  cursor: pointer; background: #111; color: #fff; border-color: #111;
+}
+.savebtn:hover { background: #333; }
+.statusmsg { font-size: 13px; }
+.statusmsg.ok { color: #1a9e6a; }
+.statusmsg.err { color: #c0392b; }
+
+/* Leaderboard */
+.lbrow { padding: 10px 0; border-bottom: 1px solid #f0f0f0; display: flex; gap: 10px; }
+.lbrow:last-child { border-bottom: none; }
+.lbrank { font-size: 13px; font-weight: 700; min-width: 22px; color: #aaa; padding-top: 2px; }
+.lbname { font-size: 14px; font-weight: 600; }
+.lbdetail { font-size: 12px; color: #aaa; margin-top: 2px; }
+.empty { padding: 2rem; text-align: center; color: #aaa; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⚽ VM 2026 – Tippekonkurranse</h1>
+  <p class="sub">Gjett hvilke lag som går videre og hvem som vinner</p>
+
+  <div class="name-section">
+    <label for="pname">Ditt navn</label>
+    <div class="name-row">
+      <input type="text" id="pname" placeholder="Skriv inn navn..." autocomplete="off" />
+      <button id="loadBtn">Last inn lagret tips</button>
+    </div>
+    <div class="hint" id="hint">Skriv inn navn for å komme i gang</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tbtn-groups">Gruppespill</button>
+    <button class="tab" id="tbtn-knockout">Sluttspill</button>
+    <button class="tab" id="tbtn-leaderboard">Ledertavle</button>
+  </div>
+
+  <div class="section active" id="tab-groups"></div>
+  <div class="section" id="tab-knockout"></div>
+  <div class="section" id="tab-leaderboard"></div>
+</div>
+
+<div class="savebar" style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e0e0e0;padding:10px 1.5rem;display:flex;gap:12px;align-items:center;">
+  <button class="savebtn" id="saveBtn">💾 Lagre tips</button>
+  <span class="statusmsg" id="msg"></span>
+</div>
+
+<script>
+const FLAGS = {
+  "Mexico":"mx","South Korea":"kr","South Africa":"za","Czechia":"cz",
+  "Canada":"ca","Switzerland":"ch","Qatar":"qa","Bosnia-Herz.":"ba",
+  "Brazil":"br","Morocco":"ma","Scotland":"gb-sct","Haiti":"ht",
+  "USA":"us","Australia":"au","Paraguay":"py","Türkiye":"tr",
+  "Germany":"de","Ecuador":"ec","Côte d'Ivoire":"ci","Curaçao":"cw",
+  "Netherlands":"nl","Japan":"jp","Tunisia":"tn","Sweden":"se",
+  "Belgium":"be","Iran":"ir","Egypt":"eg","New Zealand":"nz",
+  "Spain":"es","Uruguay":"uy","Saudi Arabia":"sa","Cabo Verde":"cv",
+  "France":"fr","Senegal":"sn","Norway":"no","Iraq":"iq",
+  "Argentina":"ar","Austria":"at","Algeria":"dz","Jordan":"jo",
+  "Portugal":"pt","Colombia":"co","Uzbekistan":"uz","DR Congo":"cd",
+  "England":"gb-eng","Croatia":"hr","Panama":"pa","Ghana":"gh"
+};
+const GRP = {
+  A:["Mexico","South Korea","South Africa","Czechia"],
+  B:["Canada","Switzerland","Qatar","Bosnia-Herz."],
+  C:["Brazil","Morocco","Scotland","Haiti"],
+  D:["USA","Australia","Paraguay","Türkiye"],
+  E:["Germany","Ecuador","Côte d'Ivoire","Curaçao"],
+  F:["Netherlands","Japan","Tunisia","Sweden"],
+  G:["Belgium","Iran","Egypt","New Zealand"],
+  H:["Spain","Uruguay","Saudi Arabia","Cabo Verde"],
+  I:["France","Senegal","Norway","Iraq"],
+  J:["Argentina","Austria","Algeria","Jordan"],
+  K:["Portugal","Colombia","Uzbekistan","DR Congo"],
+  L:["England","Croatia","Panama","Ghana"]
+};
+const GL = Object.keys(GRP);
+const ALL = Object.values(GRP).flat();
+
+let player = "";
+let P = { adv:{}, thirds:[], r32:[], r16:[], quarters:[], semis:[], winner:"", third:"", fourth:"" };
+
+const fl = c => `<img class="fl" src="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${c}.svg" alt="">`;
+
+function setMsg(txt, err) {
+  const el = document.getElementById('msg');
+  el.textContent = txt;
+  el.className = 'statusmsg ' + (err ? 'err' : 'ok');
+  setTimeout(() => { el.textContent = ''; el.className = 'statusmsg'; }, 3000);
+}
+
+function saveToStorage() {
+  if (!player) return;
+  try { localStorage.setItem('vm26_' + player, JSON.stringify(P)); } catch(e) {}
+}
+
+// Name
+document.getElementById('pname').addEventListener('input', function() {
+  player = this.value.trim();
+  const h = document.getElementById('hint');
+  h.textContent = player ? 'Tips lagres som: ' + player : 'Skriv inn navn for å komme i gang';
+  h.className = 'hint' + (player ? ' ok' : '');
+});
+
+document.getElementById('loadBtn').addEventListener('click', function() {
+  if (!player) { setMsg('Skriv inn navn først', true); return; }
+  try {
+    const raw = localStorage.getItem('vm26_' + player);
+    if (raw) {
+      P = JSON.parse(raw);
+      if (!P.thirds) P.thirds = [];
+      if (!P.r32) P.r32 = [];
+      if (!P.r16) P.r16 = [];
+      if (!P.quarters) P.quarters = [];
+      if (!P.semis) P.semis = [];
+      if (!P.third) P.third = '';
+      if (!P.fourth) P.fourth = '';
+      if (!P.winner) P.winner = '';
+      setMsg('✓ Lastet tips for ' + player, false);
+      renderGroups();
+      if (document.getElementById('tab-knockout').classList.contains('active')) renderKO();
+    } else {
+      setMsg('Ingen lagret tips funnet for ' + player, true);
+    }
+  } catch(e) { setMsg('Kunne ikke laste', true); }
+});
+
+// Tabs
+['groups','knockout','leaderboard'].forEach(t => {
+  document.getElementById('tbtn-' + t).addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('tab-' + t).classList.add('active');
+    if (t === 'knockout') renderKO();
+    if (t === 'leaderboard') renderLB();
+  });
+});
+
+// Save
+document.getElementById('saveBtn').addEventListener('click', function() {
+  if (!player) { setMsg('Skriv inn navn først', true); return; }
+  try {
+    localStorage.setItem('vm26_' + player, JSON.stringify(P));
+    setMsg('✓ Lagret for ' + player, false);
+  } catch(e) { setMsg('Feil ved lagring', true); }
+});
+
+// Groups
+function renderGroups() {
+  const c = document.getElementById('tab-groups');
+  c.innerHTML = '';
+
+  const note = document.createElement('div');
+  note.className = 'info-note';
+  note.textContent = '1. og 2. plass går automatisk videre. De 8 beste tredjeplasslagene også.';
+  c.appendChild(note);
+
+  const grid = document.createElement('div');
+  grid.className = 'groups-grid';
+
+  GL.forEach(letter => {
+    const card = document.createElement('div');
+    card.className = 'gcard';
+    const title = document.createElement('div');
+    title.className = 'gtitle';
+    title.textContent = 'Gruppe ' + letter;
+    card.appendChild(title);
+
+    GRP[letter].forEach(team => {
+      const row = document.createElement('div');
+      row.className = 'trow';
+      const nm = document.createElement('span');
+      nm.className = 'tname';
+      nm.innerHTML = fl(FLAGS[team]) + team;
+      row.appendChild(nm);
+
+      const bg = document.createElement('div');
+      bg.className = 'btngrp';
+      [1, 2, 3, 4].forEach(pos => {
+        const btn = document.createElement('button');
+        btn.className = 'abtn' + ((P.adv[team] || 0) === pos ? ' s' + pos : '');
+        btn.textContent = pos + '.';
+        btn.addEventListener('click', function() {
+          if (P.adv[team] === pos) {
+            P.adv[team] = 0;
+          } else {
+            const conf = GRP[letter].find(t => t !== team && P.adv[t] === pos);
+            if (conf) P.adv[conf] = 0;
+            P.adv[team] = pos;
+          }
+          syncThirds();
+          renderGroups();
+        });
+        bg.appendChild(btn);
+      });
+      row.appendChild(bg);
+      card.appendChild(row);
+    });
+    grid.appendChild(card);
+  });
+  c.appendChild(grid);
+
+  // Third ranking
+  const thirds = GL.map(l => GRP[l].find(t => P.adv[t] === 3) || null).filter(Boolean);
+  if (thirds.length === 0) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'third-wrap';
+
+  const h3 = document.createElement('h3');
+  h3.textContent = 'Beste tredjeplasslag';
+  wrap.appendChild(h3);
+
+  const desc = document.createElement('p');
+  desc.className = 'third-desc';
+  desc.textContent = '8 av 12 tredjeplasslag går videre. Ranger fra best til dårligst — de øverste 8 er videre.';
+  wrap.appendChild(desc);
+
+  const miss = 12 - thirds.length;
+  if (miss > 0) {
+    const mn = document.createElement('div');
+    mn.className = 'missing-note';
+    mn.innerHTML = 'Velg tredjeplass i <b>' + miss + ' gruppe' + (miss > 1 ? 'r' : '') + '</b> til for å ha alle 12.';
+    wrap.appendChild(mn);
+  }
+
+  const ul = document.createElement('ul');
+  ul.className = 'rlist';
+
+  P.thirds.forEach((team, i) => {
+    const through = i < 8;
+    const grp = GL.find(l => GRP[l].includes(team));
+    const last = i === P.thirds.length - 1;
+
+    if (i === 8 && P.thirds.length > 8) {
+      const dl = document.createElement('li');
+      dl.style.listStyle = 'none';
+      dl.innerHTML = '<div class="divline"><hr><span>— 8 beste videre —</span><hr></div>';
+      ul.appendChild(dl);
+    }
+
+    const li = document.createElement('li');
+    li.className = 'ritem' + (through ? ' through' : '');
+    li.draggable = true;
+    li.dataset.idx = i;
+
+    const rn = document.createElement('span');
+    rn.className = 'rnum';
+    rn.textContent = i + 1;
+
+    const rt = document.createElement('span');
+    rt.className = 'rteam';
+    rt.innerHTML = fl(FLAGS[team]) + team + '<span class="rgrp">Gr.' + grp + '</span>';
+
+    const rb = document.createElement('span');
+    rb.className = 'rbadge ' + (through ? 't' : 'o');
+    rb.textContent = through ? 'videre' : 'ute';
+
+    const ra = document.createElement('div');
+    ra.className = 'rarr';
+    const up = document.createElement('button');
+    up.className = 'arrbtn'; up.textContent = '▲'; up.disabled = (i === 0);
+    up.addEventListener('click', function() { moveT(i, -1); });
+    const dn = document.createElement('button');
+    dn.className = 'arrbtn'; dn.textContent = '▼'; dn.disabled = last;
+    dn.addEventListener('click', function() { moveT(i, 1); });
+    ra.appendChild(up); ra.appendChild(dn);
+
+    li.appendChild(rn); li.appendChild(rt); li.appendChild(rb); li.appendChild(ra);
+
+    li.addEventListener('dragstart', function(e) {
+      e.dataTransfer.setData('text/plain', String(i));
+      setTimeout(() => li.style.opacity = '0.3', 0);
+    });
+    li.addEventListener('dragend', function() {
+      li.style.opacity = '1';
+      document.querySelectorAll('.ritem').forEach(x => x.style.borderColor = '');
+    });
+    li.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      li.style.borderColor = '#555';
+    });
+    li.addEventListener('dragleave', function() {
+      li.style.borderColor = '';
+    });
+    li.addEventListener('drop', function(e) {
+      e.preventDefault();
+      li.style.borderColor = '';
+      const from = parseInt(e.dataTransfer.getData('text/plain'));
+      const to = parseInt(li.dataset.idx);
+      if (!isNaN(from) && from !== to) {
+        const [m] = P.thirds.splice(from, 1);
+        P.thirds.splice(to, 0, m);
+        renderGroups();
+      }
+    });
+
+    ul.appendChild(li);
+  });
+
+  wrap.appendChild(ul);
+  c.appendChild(wrap);
+}
+
+function syncThirds() {
+  const cur = GL.map(l => GRP[l].find(t => P.adv[t] === 3) || null).filter(Boolean);
+  P.thirds = [
+    ...P.thirds.filter(t => cur.includes(t)),
+    ...cur.filter(t => !P.thirds.includes(t))
+  ];
+}
+
+function moveT(i, d) {
+  const j = i + d;
+  if (j < 0 || j >= P.thirds.length) return;
+  [P.thirds[i], P.thirds[j]] = [P.thirds[j], P.thirds[i]];
+  renderGroups();
+}
+
+// Knockout
+function renderKO() {
+  const c = document.getElementById('tab-knockout');
+  c.innerHTML = '';
+  [
+    { id:'r32',      lbl:'Runde av 32',      max:16, gold:false },
+    { id:'r16',      lbl:'Runde av 16',      max:8,  gold:false },
+    { id:'quarters', lbl:'🏅 Kvartfinalister', max:4,  gold:false },
+    { id:'semis',    lbl:'🎖️ Semifinalister',  max:4,  gold:false },
+    { id:'third',    lbl:'🥉 3. plass',        max:1,  gold:false },
+    { id:'fourth',   lbl:'4. plass',           max:1,  gold:false },
+    { id:'winner',   lbl:'🏆 Vinner',          max:1,  gold:true  }
+  ].forEach(function(round) {
+    const wrap = document.createElement('div');
+    const rl = document.createElement('div');
+    rl.className = 'round-lbl';
+    rl.textContent = round.lbl + (round.max > 1 ? ' (velg ' + round.max + ')' : ' (velg 1)');
+    wrap.appendChild(rl);
+
+    const pg = document.createElement('div');
+    pg.className = 'pgrid';
+
+    ALL.forEach(function(team) {
+      const sel = Array.isArray(P[round.id]) ? P[round.id].includes(team) : P[round.id] === team;
+      const btn = document.createElement('button');
+      btn.className = 'pbtn' + (sel ? (round.gold ? ' gold' : ' sel') : '');
+      btn.innerHTML = fl(FLAGS[team]) + team;
+      btn.addEventListener('click', function() {
+        if (round.max === 1) {
+          P[round.id] = (P[round.id] === team) ? '' : team;
+        } else {
+          const a = P[round.id];
+          const x = a.indexOf(team);
+          if (x > -1) a.splice(x, 1);
+          else if (a.length < round.max) a.push(team);
+        }
+        renderKO();
+      });
+      pg.appendChild(btn);
+    });
+
+    wrap.appendChild(pg);
+    c.appendChild(wrap);
+  });
+}
+
+// Leaderboard
+function renderLB() {
+  const el = document.getElementById('tab-leaderboard');
+  el.innerHTML = '';
+  const entries = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('vm26_')) {
+        const name = key.replace('vm26_', '');
+        const raw = localStorage.getItem(key);
+        if (raw) entries.push({ name, d: JSON.parse(raw) });
+      }
+    }
+  } catch(e) {}
+
+  if (entries.length === 0) {
+    el.innerHTML = '<div class="empty">Ingen tips lagret ennå.</div>';
+    return;
+  }
+
+  entries.sort((a, b) => a.name.localeCompare(b.name));
+
+  const count = document.createElement('div');
+  count.style.cssText = 'font-size:13px;color:#aaa;margin-bottom:10px;';
+  count.textContent = entries.length + ' deltaker' + (entries.length === 1 ? '' : 'e');
+  el.appendChild(count);
+
+  entries.forEach(function(e, i) {
+    const w = e.d.winner || '–';
+    const wf = e.d.winner && FLAGS[e.d.winner] ? fl(FLAGS[e.d.winner]) : '';
+    const gc = Object.values(e.d.adv || {}).filter(v => v > 0).length;
+    const semi = (e.d.semis || []).map(t => t.split(' ')[0]).join(', ') || '–';
+    const fourth = e.d.fourth || '–';
+    const fourthf = e.d.fourth && FLAGS[e.d.fourth] ? fl(FLAGS[e.d.fourth]) : '';
+    const div = document.createElement('div');
+    div.className = 'lbrow';
+    div.innerHTML = '<span class="lbrank">' + (i+1) + '</span>'
+      + '<div><div class="lbname">' + e.name + '</div>'
+      + '<div class="lbdetail">Vinner: ' + wf + ' ' + w + ' &nbsp;·&nbsp; 4. plass: ' + fourthf + ' ' + fourth + '</div>'
+      + '<div class="lbdetail">Semifinalister: ' + semi + '</div>'
+      + '<div class="lbdetail">' + gc + ' lag tipset i gruppespill</div></div>';
+    el.appendChild(div);
+  });
+}
+
+// Init
+renderGroups();
+</script>
+</body>
+</html>
