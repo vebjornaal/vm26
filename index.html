@@ -52,7 +52,6 @@ h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
 .abtn.s1 { background: #111; border-color: #111; color: #fff; }
 .abtn.s2 { background: #555; border-color: #555; color: #fff; }
 .abtn.s3 { background: #999; border-color: #999; color: #fff; }
-.abtn.s4 { background: #ccc; border-color: #ccc; color: #fff; }
 
 /* Third ranking */
 .third-wrap { margin-top: 1.8rem; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px; }
@@ -187,7 +186,7 @@ const GL = Object.keys(GRP);
 const ALL = Object.values(GRP).flat();
 
 let player = "";
-let P = { adv:{}, thirds:[], r32:[], r16:[], quarters:[], semis:[], winner:"", third:"", fourth:"" };
+let P = { adv:{}, thirds:[], semis:[], finalists:[], winner:"", third:"", fourth:"" };
 
 const fl = c => `<img class="fl" src="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${c}.svg" alt="">`;
 
@@ -218,13 +217,7 @@ document.getElementById('loadBtn').addEventListener('click', function() {
     if (raw) {
       P = JSON.parse(raw);
       if (!P.thirds) P.thirds = [];
-      if (!P.r32) P.r32 = [];
-      if (!P.r16) P.r16 = [];
-      if (!P.quarters) P.quarters = [];
-      if (!P.semis) P.semis = [];
-      if (!P.third) P.third = '';
       if (!P.fourth) P.fourth = '';
-      if (!P.winner) P.winner = '';
       setMsg('✓ Lastet tips for ' + player, false);
       renderGroups();
       if (document.getElementById('tab-knockout').classList.contains('active')) renderKO();
@@ -286,7 +279,7 @@ function renderGroups() {
 
       const bg = document.createElement('div');
       bg.className = 'btngrp';
-      [1, 2, 3, 4].forEach(pos => {
+      [1, 2, 3].forEach(pos => {
         const btn = document.createElement('button');
         btn.className = 'abtn' + ((P.adv[team] || 0) === pos ? ' s' + pos : '');
         btn.textContent = pos + '.';
@@ -294,8 +287,10 @@ function renderGroups() {
           if (P.adv[team] === pos) {
             P.adv[team] = 0;
           } else {
-            const conf = GRP[letter].find(t => t !== team && P.adv[t] === pos);
-            if (conf) P.adv[conf] = 0;
+            if (pos < 3) {
+              const conf = GRP[letter].find(t => t !== team && P.adv[t] === pos);
+              if (conf) P.adv[conf] = 0;
+            }
             P.adv[team] = pos;
           }
           syncThirds();
@@ -432,13 +427,11 @@ function renderKO() {
   const c = document.getElementById('tab-knockout');
   c.innerHTML = '';
   [
-    { id:'r32',      lbl:'Runde av 32',      max:16, gold:false },
-    { id:'r16',      lbl:'Runde av 16',      max:8,  gold:false },
-    { id:'quarters', lbl:'🏅 Kvartfinalister', max:4,  gold:false },
-    { id:'semis',    lbl:'🎖️ Semifinalister',  max:4,  gold:false },
-    { id:'third',    lbl:'🥉 3. plass',        max:1,  gold:false },
-    { id:'fourth',   lbl:'4. plass',           max:1,  gold:false },
-    { id:'winner',   lbl:'🏆 Vinner',          max:1,  gold:true  }
+    { id:'semis',     lbl:'🏅 Semifinalister', max:4, gold:false },
+    { id:'finalists', lbl:'🥈 Finalister',     max:2, gold:false },
+    { id:'third',     lbl:'🥉 3. plass',        max:1, gold:false },
+    { id:'fourth',    lbl:'4. plass',           max:1, gold:false },
+    { id:'winner',    lbl:'🏆 Vinner',          max:1, gold:true  }
   ].forEach(function(round) {
     const wrap = document.createElement('div');
     const rl = document.createElement('div');
